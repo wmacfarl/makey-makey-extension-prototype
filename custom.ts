@@ -1,3 +1,4 @@
+let DEBOUNCE_TIME = 25
 enum Key {
     W = 13,
     A = 12,
@@ -104,9 +105,9 @@ namespace MakeyMakey {
     //% block="type key %key"
     export function typeKey(key: Key): void {
         pressKey(key);
-        basic.pause(50);
+        basic.pause(DEBOUNCE_TIME);
         release(key);
-        basic.pause(50);
+        basic.pause(DEBOUNCE_TIME);
     }
 
     //% block="press key %key"
@@ -142,16 +143,22 @@ namespace MakeyMakey {
     //% block="click mouse button %button"
     export function clickMouse(button: MouseButtons): void {
         pressMouseButton(button);
-        basic.pause(50);
+        basic.pause(DEBOUNCE_TIME);
         releaseMouseButton(button);
-        basic.pause(50);
+        basic.pause(DEBOUNCE_TIME);
     }
     //% block="move mouse %direction|for %seconds|seconds"
     //% seconds.shadow=timePicker
     export function moveMouseForSeconds(direction: MouseDirections, seconds: number): void {
         moveMouse(direction);
         basic.pause(seconds);
-        stopMouse(direction); 
-        basic.pause(50);
+        stopMouse(direction);
+        basic.pause(DEBOUNCE_TIME);
     }
+
+    //% block="set debounce %ms"
+    export function setDebounce(ms: number): void {
+        DEBOUNCE_TIME = ms;
+    }
+
 }
