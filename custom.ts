@@ -20,7 +20,7 @@ enum MouseButtons {
 }
 
 //% weight=100 color=#0fbc11 icon=""
-namespace MakeyMakey{
+namespace MakeyMakey {
     let dir_a = 0
     let SX1509_ADDRESS = 0
     let REG_RESET = 0
@@ -31,7 +31,7 @@ namespace MakeyMakey{
     let REG_DATA_A = 17
     let REG_DATA_B = 16
     let SX1509_LED_PIN = 6
-// Configure pins 0-13 as inputs, 14-15 as outputs
+    // Configure pins 0-13 as inputs, 14-15 as outputs
 
 
     //% block="Initialize MakeyMakey"
@@ -64,48 +64,49 @@ namespace MakeyMakey{
         )
     }
 
-function sx1509_reset() {
-    REG_RESET = 125
-    pins.i2cWriteNumber(
-        SX1509_ADDRESS,
-        (REG_RESET << 8) | 0x12,
-        NumberFormat.UInt16BE,
-        false
-    )
-    pins.i2cWriteNumber(
-        SX1509_ADDRESS,
-        (REG_RESET << 8) | 0x34,
-        NumberFormat.UInt16BE,
-        false
-    )
-}
-function sx1509_digitalWrite(pin: number, state: boolean) {
-    let register = pin < 8 ? REG_DATA_A : REG_DATA_B;
-    pins.i2cWriteNumber(
-        SX1509_ADDRESS,
-        register,
-        NumberFormat.UInt8LE,
-        true
-    )
-    currentValue = pins.i2cReadNumber(SX1509_ADDRESS, NumberFormat.UInt8LE, false)
-    let data = (1 << (pin % 8));
-    if (state) {
-        currentValue |= data;
-    } else {
-        currentValue &= ~data;
+    function sx1509_reset() {
+        REG_RESET = 125
+        pins.i2cWriteNumber(
+            SX1509_ADDRESS,
+            (REG_RESET << 8) | 0x12,
+            NumberFormat.UInt16BE,
+            false
+        )
+        pins.i2cWriteNumber(
+            SX1509_ADDRESS,
+            (REG_RESET << 8) | 0x34,
+            NumberFormat.UInt16BE,
+            false
+        )
     }
-    pins.i2cWriteNumber(
-        SX1509_ADDRESS,
-        (register << 8) | currentValue,
-        NumberFormat.UInt16BE,
-        false
-    )
-}
+    function sx1509_digitalWrite(pin: number, state: boolean) {
+        let register = pin < 8 ? REG_DATA_A : REG_DATA_B;
+        pins.i2cWriteNumber(
+            SX1509_ADDRESS,
+            register,
+            NumberFormat.UInt8LE,
+            true
+        )
+        currentValue = pins.i2cReadNumber(SX1509_ADDRESS, NumberFormat.UInt8LE, false)
+        let data = (1 << (pin % 8));
+        if (state) {
+            currentValue |= data;
+        } else {
+            currentValue &= ~data;
+        }
+        pins.i2cWriteNumber(
+            SX1509_ADDRESS,
+            (register << 8) | currentValue,
+            NumberFormat.UInt16BE,
+            false
+        )
+    }
     //% block="type key %key"
     export function typeKey(key: Key): void {
         pressKey(key);
-        basic.pause(25);
+        basic.pause(50);
         release(key);
+        basic.pause(50);
     }
 
     //% block="press key %key"
@@ -141,15 +142,16 @@ function sx1509_digitalWrite(pin: number, state: boolean) {
     //% block="click mouse button %button"
     export function clickMouse(button: MouseButtons): void {
         pressMouseButton(button);
-        basic.pause(25);
+        basic.pause(50);
         releaseMouseButton(button);
+        basic.pause(50);
     }
     //% block="move mouse %direction|for %seconds|seconds"
     //% seconds.shadow=timePicker
     export function moveMouseForSeconds(direction: MouseDirections, seconds: number): void {
         moveMouse(direction);
         basic.pause(seconds);
-        stopMouse(direction);
+        stopMouse(direction); 
+        basic.pause(50);
     }
-
 }
