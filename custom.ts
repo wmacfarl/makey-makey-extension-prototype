@@ -39,15 +39,17 @@ namespace MakeyMakey {
     export function sx1509_init() {
         sx1509_reset()
         basic.pause(500)
+        // Binary: 0011 1111 1111 1111, setting pins 0-13 as inputs, 14-15 as inputs
+        dir_a = 16383
         pins.i2cWriteNumber(
             SX1509_ADDRESS,
-            (REG_DIR_A << 8) | 0x00,
+            (REG_DIR_A << 8) | (dir_a >> 8),
             NumberFormat.UInt16BE,
             false
         )
         pins.i2cWriteNumber(
             SX1509_ADDRESS,
-            (REG_DIR_B << 8) | 0x00,
+            (REG_DIR_B << 8) | 0x03,
             NumberFormat.UInt16BE,
             false
         )
@@ -64,6 +66,7 @@ namespace MakeyMakey {
             false
         )
     }
+
 
     function sx1509_reset() {
         REG_RESET = 125
@@ -160,5 +163,58 @@ namespace MakeyMakey {
     export function setDebounce(ms: number): void {
         DEBOUNCE_TIME = ms;
     }
+
+    //% weight=100 color=#0fbc11 icon=""
+namespace MakeyMakey {
+    // ...
+    // Existing code
+
+    // Event handlers
+    let onKeyPressedHandler: () => void;
+    let onMouseClickedHandler: () => void;
+
+    //% block="when Makey Makey key pressed"
+    export function whenKeyPressed(handler: () => void): void {
+        onKeyPressedHandler = handler;
+    }
+
+    //% block="when Makey Makey mouse clicked"
+    export function whenMouseClicked(handler: () => void): void {
+        onMouseClickedHandler = handler;
+    }
+
+    // Background loop checking for pin input
+    control.inBackground(() => {
+        let prevKeyPressedState = true;
+        let prevMouseClickedState = true;
+
+        while (true) {
+            const keyPressed = sx1509_digitalRead(14) === 0;
+            const mouseClicked = sx1509_digitalRead(15) === 0;
+
+            if (!prevKeyPressedState && keyPressed && onKeyPressedHandler) {
+                onKeyPressedHandler();
+            }
+
+            if (!prevMouseClickedState && mouseClicked && onMouseClickedHandler) {
+                onMouseClickedHandler();
+            }
+
+            prevKeyPressedState = keyPressed;
+            prevMouseClickedState = mouseClicked;
+
+            basic.pause(20); // Short pause to reduce CPU usage
+        }
+    });
+
+    // Helper function to read digital input from SX1509 pins
+    function sx1509_digitalRead(pin: number): number {
+        let register = pin < 8 ? REG_DATA_A : REG_DATA_B;
+        pins.i2cWriteNumber(SX1509_ADDRESS, register, NumberFormat.UInt8LE, true);
+        let currentValue = pins.i2cReadNumber(SX1509_ADDRESS, NumberFormat.UInt8LE, false);
+        let pinValue = (currentValue >> (pin % 8)) & 1;
+        return pinValue;
+    }
+}
 
 }
