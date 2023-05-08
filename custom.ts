@@ -7,7 +7,6 @@ enum Key {
     F = 9,
     G = 8
 }
-
 enum MouseDirections {
     UP = 0,
     DOWN = 1,
@@ -32,27 +31,28 @@ namespace MakeyMakey {
     let REG_DATA_A = 17
     let REG_DATA_B = 16
     let SX1509_LED_PIN = 6
-    // Configure pins 0-13 as inputs, 14-15 as outputs
-
+    let REG_INPUT_DISABLE_A = 7;
+    let REG_INPUT_DISABLE_B = 6;
 
     //% block="Initialize MakeyMakey"
     export function sx1509_init() {
-        sx1509_reset()
+        sx1509_reset();
         basic.pause(500)
-        // Binary: 0011 1111 1111 1111, setting pins 0-13 as inputs, 14-15 as inputs
-        dir_a = 16383
+    //    setForInput()
         pins.i2cWriteNumber(
             SX1509_ADDRESS,
-            (REG_DIR_A << 8) | (dir_a >> 8),
+            (REG_DIR_B << 8) | 0xC0,
             NumberFormat.UInt16BE,
             false
         )
+
         pins.i2cWriteNumber(
             SX1509_ADDRESS,
-            (REG_DIR_B << 8) | 0x03,
+            (REG_DIR_A << 8) | 0x00, 
             NumberFormat.UInt16BE,
             false
         )
+
         pins.i2cWriteNumber(
             SX1509_ADDRESS,
             (REG_DATA_A << 8) | 0xFF,
@@ -67,6 +67,42 @@ namespace MakeyMakey {
         )
     }
 
+
+    function setForInput(){
+        dir_a = 16383
+        pins.i2cWriteNumber(
+            SX1509_ADDRESS,
+            (REG_DIR_A << 8) | (dir_a >> 8),
+            NumberFormat.UInt16BE,
+            false
+        )
+        /*
+        pins.i2cWriteNumber(
+            SX1509_ADDRESS,
+            (REG_DIR_B << 8) | 0xFF, // Set all pins in the B register as inputs
+            NumberFormat.UInt16BE,
+            false
+        )
+        */
+    }
+
+    function setForOutput(){
+        pins.i2cWriteNumber(
+            SX1509_ADDRESS,
+            (REG_DIR_A << 8) | 0x00,
+            NumberFormat.UInt16BE,
+            false
+        )
+        /*
+        pins.i2cWriteNumber(
+            SX1509_ADDRESS,
+            (REG_DIR_B << 8) | 0x00,
+            NumberFormat.UInt16BE,
+            false
+        )
+        */
+   
+    }
 
     function sx1509_reset() {
         REG_RESET = 125
@@ -83,6 +119,7 @@ namespace MakeyMakey {
             false
         )
     }
+
     function sx1509_digitalWrite(pin: number, state: boolean) {
         let register = pin < 8 ? REG_DATA_A : REG_DATA_B;
         pins.i2cWriteNumber(
@@ -179,14 +216,37 @@ namespace MakeyMakey {
         onMouseClickedHandler = handler;
     }
 
+
+
+
+    // Helper function to read digital input from SX1509 pins
+    //% block="digitalRead sx1509 pin %pin"
+    export function sx1509_digitalRead(pin: number): number {
+        let register = pin < 8 ? REG_DATA_A : REG_DATA_B;
+        pins.i2cWriteNumber(
+            SX1509_ADDRESS,
+            register,
+            NumberFormat.UInt8LE,
+            true
+        )
+        let currentValue = pins.i2cReadNumber(SX1509_ADDRESS, NumberFormat.UInt8LE, false);
+        let data = (1 << (pin % 8));
+        return (currentValue & data) > 0 ? 1 : 0;
+    }
+
+
     // Background loop checking for pin input
     control.inBackground(() => {
+
         let prevKeyPressedState = true;
         let prevMouseClickedState = true;
 
         while (true) {
-            const keyPressed = sx1509_digitalRead(14) === 0;
-            const mouseClicked = sx1509_digitalRead(15) === 0;
+            //setForInput()
+            const keyPressed = sx1509_digitalRead(14) === 1;
+            const mouseClicked = sx1509_digitalRead(15) === 1;
+          //  setForOutput()
+            //console.log(`keyPressed: ${keyPressed}`);
 
             if (!prevKeyPressedState && keyPressed && onKeyPressedHandler) {
                 onKeyPressedHandler();
@@ -196,19 +256,11 @@ namespace MakeyMakey {
                 onMouseClickedHandler();
             }
 
-            prevKeyPressedState = keyPressed;
+            prevKeyPressedState  = keyPressed;
             prevMouseClickedState = mouseClicked;
-
-            basic.pause(20); // Short pause to reduce CPU usage
+        
+            basic.pause(20)
         }
     });
 
-    // Helper function to read digital input from SX1509 pins
-    function sx1509_digitalRead(pin: number): number {
-        let register = pin < 8 ? REG_DATA_A : REG_DATA_B;
-        pins.i2cWriteNumber(SX1509_ADDRESS, register, NumberFormat.UInt8LE, true);
-        let currentValue = pins.i2cReadNumber(SX1509_ADDRESS, NumberFormat.UInt8LE, false);
-        let pinValue = (currentValue >> (pin % 8)) & 1;
-        return pinValue;
-    }
 }
