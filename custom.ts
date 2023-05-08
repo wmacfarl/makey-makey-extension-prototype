@@ -1,4 +1,4 @@
-let DEBOUNCE_TIME = 25
+let DEBOUNCE_TIME = 50
 enum Key {
     W = 13,
     A = 12,
