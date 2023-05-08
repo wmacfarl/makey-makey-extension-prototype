@@ -164,10 +164,6 @@ namespace MakeyMakey {
         DEBOUNCE_TIME = ms;
     }
 
-    //% weight=100 color=#0fbc11 icon=""
-namespace MakeyMakey {
-    // ...
-    // Existing code
 
     // Event handlers
     let onKeyPressedHandler: () => void;
@@ -215,6 +211,4 @@ namespace MakeyMakey {
         let pinValue = (currentValue >> (pin % 8)) & 1;
         return pinValue;
     }
-}
-
 }
